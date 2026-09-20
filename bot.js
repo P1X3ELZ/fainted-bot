@@ -17,28 +17,25 @@ function createBotInstance() {
     port: 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
     version: '1.18.2',
-    physicsEnabled: true, // Enabled physics so server detects real player movement
-    checkTimeoutInterval: 90000
+    physicsEnabled: false, // Prevents engine movement packets from triggering ECONNRESET
+    checkTimeoutInterval: 120000
   });
 
   bot.on('login', () => {
-    console.log('🔑 Logged into proxy! Waiting for world spawn...');
-  });
-
-  bot.on('spawn', () => {
-    console.log('👑 FaintedBot successfully loaded into world!');
-    
-    // Authenticate once fully loaded into a world chunk
+    console.log('🔑 Logged into proxy! Registering / Logging in...');
     setTimeout(() => {
       bot.chat('/register FaintedPass123 FaintedPass123');
       bot.chat('/login FaintedPass123');
     }, 1500);
 
-    // Force move to KitPvP sub-server after authentication
     setTimeout(() => {
-      console.log('⚔️ Sending bot to KitPvP...');
+      console.log('⚔️ Transferring to KitPvP sub-server...');
       bot.chat('/server pvp');
-    }, 4000);
+    }, 3500);
+  });
+
+  bot.on('spawn', () => {
+    console.log('👑 FaintedBot successfully joined sub-server!');
   });
 
   // Combat loop
@@ -72,6 +69,10 @@ function createBotInstance() {
   });
 
   bot.on('error', (err) => {
+    // Suppress datacenter socket resets to prevent rapid reconnect spam
+    if (err.code === 'ECONNRESET' || err.message.includes('ECONNRESET')) {
+      return;
+    }
     console.error('❌ Connection error:', err.message);
   });
 }
