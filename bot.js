@@ -18,20 +18,28 @@ function createBotInstance() {
     username: process.env.MC_USERNAME || 'FaintedBot',
     version: '1.18.2',
     physicsEnabled: false,
-    connectTimeout: 20000
+    connectTimeout: 30000
   });
 
-  bot.on('spawn', () => {
-    console.log('👑 FaintedBot successfully joined Mineberry!');
-    
-    // Auto-login / register
+  bot.on('login', () => {
+    console.log('🔑 Logged into proxy! Sending auth commands...');
     setTimeout(() => {
       bot.chat('/register FaintedPass123 FaintedPass123');
       bot.chat('/login FaintedPass123');
+    }, 1000);
+  });
+
+  bot.on('spawn', () => {
+    console.log('👑 FaintedBot has spawned! Transferring to hub...');
+    
+    // Send bot to main hub / lobby
+    setTimeout(() => {
+      bot.chat('/hub');
+      bot.chat('/server hub');
     }, 2000);
   });
 
-  // Combat loop running on a fixed interval
+  // Combat loop
   setInterval(() => {
     if (!bot || !bot.entity) return;
     const target = bot.nearestEntity(e => e.type === 'player' && e.username !== bot.username);
@@ -57,8 +65,8 @@ function createBotInstance() {
   });
 
   bot.on('end', () => {
-    console.log('🔄 Bot disconnected. Reconnecting in 10 seconds...');
-    setTimeout(createBotInstance, 10000);
+    console.log('🔄 Bot disconnected. Reconnecting in 20 seconds...');
+    setTimeout(createBotInstance, 20000);
   });
 
   bot.on('error', (err) => {
