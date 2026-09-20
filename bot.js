@@ -17,29 +17,28 @@ function createBotInstance() {
     port: 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
     version: '1.18.2',
-    physicsEnabled: false,
+    physicsEnabled: true, // Enabled physics so server detects real player movement
     checkTimeoutInterval: 90000
   });
 
   bot.on('login', () => {
-    console.log('🔑 Authenticating on Bungee proxy...');
-    
-    // Rapid auth attempt
-    setTimeout(() => {
-      bot.chat('/register FaintedPass123 FaintedPass123');
-      bot.chat('/login FaintedPass123');
-    }, 1000);
-
-    // Force route into KitPvP / Lobby to exit limbo
-    setTimeout(() => {
-      console.log('🌐 Requesting sub-server routing...');
-      bot.chat('/server pvp');
-      bot.chat('/hub');
-    }, 3000);
+    console.log('🔑 Logged into proxy! Waiting for world spawn...');
   });
 
   bot.on('spawn', () => {
-    console.log('👑 FaintedBot successfully spawned in-game!');
+    console.log('👑 FaintedBot successfully loaded into world!');
+    
+    // Authenticate once fully loaded into a world chunk
+    setTimeout(() => {
+      bot.chat('/register FaintedPass123 FaintedPass123');
+      bot.chat('/login FaintedPass123');
+    }, 1500);
+
+    // Force move to KitPvP sub-server after authentication
+    setTimeout(() => {
+      console.log('⚔️ Sending bot to KitPvP...');
+      bot.chat('/server pvp');
+    }, 4000);
   });
 
   // Combat loop
