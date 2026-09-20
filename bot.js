@@ -1,10 +1,10 @@
 const mineflayer = require('mineflayer');
 const express = require('express');
 
-// Express keep-alive server
+// Express keep-alive web server
 const app = express();
 const PORT = process.env.PORT || 10000;
-app.get('/', (req, res) => res.send('FaintedBot is active!'));
+app.get('/', (req, res) => res.send('FaintedBot is running 24/7!'));
 app.listen(PORT, () => console.log(`Keep-alive server listening on port ${PORT}`));
 
 let bot = null;
@@ -20,15 +20,12 @@ function createBotInstance() {
     checkTimeoutInterval: 60000
   });
 
-  // Intercept and swallow corrupt chunk/map packets from Mineberry Bungee proxy
-  bot._client.on('packet', (data, metadata, buffer, fullBuffer) => {
-    if (metadata.name === 'map_chunk' || metadata.name === 'unload_chunk') {
-      metadata.name = 'keep_alive'; // Remap chunk packets so parser skips them
+  // Safely disable physics calculations as soon as physics plugin attaches
+  bot.once('inject_allowed', () => {
+    if (bot.physics) {
+      bot.physics.enabled = false;
     }
   });
-
-  // Stop physics engine from trying to check blocks below bot
-  bot.physics.enabled = false;
 
   bot.on('spawn', () => {
     console.log('👑 FaintedBot successfully joined Mineberry!');
@@ -40,7 +37,7 @@ function createBotInstance() {
     }, 2000);
   });
 
-  // Custom combat target tracking (without physics engine)
+  // PvP loop
   setInterval(() => {
     if (!bot || !bot.entity) return;
     const target = bot.nearestEntity(e => e.type === 'player' && e.username !== bot.username);
@@ -71,7 +68,10 @@ function createBotInstance() {
   });
 
   bot.on('error', (err) => {
-    if (err.message && err.message.includes('managed data')) return;
+    // Suppress BungeeCord/ViaVersion chunk parsing errors
+    if (err.message && (err.message.includes('managed data') || err.message.includes('bounds'))) {
+      return;
+    }
     console.error('❌ Connection error:', err.message);
   });
 }
