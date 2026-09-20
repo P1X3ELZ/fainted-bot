@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const express = require('express');
 
-// Start Express web server for Render keep-alive
+// Express keep-alive web server
 const app = express();
 const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('FaintedBot is running 24/7!'));
@@ -13,12 +13,12 @@ function createBotInstance() {
   console.log('🛸 Connecting Fainted Bot to Mineberry...');
 
   bot = mineflayer.createBot({
-    host: process.env.MC_HOST || 'mc.mineberry.org',
-    port: parseInt(process.env.MC_PORT) || 25565,
+    host: 'mc.mineberry.org',
+    port: 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
-    version: '1.8.9', // Native protocol bypasses connection timeouts & chunk bugs
-    checkTimeoutInterval: 60000,
-    physicsEnabled: false // Safely disables physics without crashing startup
+    version: '1.18.2',
+    physicsEnabled: false,
+    connectTimeout: 20000
   });
 
   bot.on('spawn', () => {
@@ -57,8 +57,8 @@ function createBotInstance() {
   });
 
   bot.on('end', () => {
-    console.log('🔄 Bot disconnected. Reconnecting in 15 seconds...');
-    setTimeout(createBotInstance, 15000);
+    console.log('🔄 Bot disconnected. Reconnecting in 10 seconds...');
+    setTimeout(createBotInstance, 10000);
   });
 
   bot.on('error', (err) => {
