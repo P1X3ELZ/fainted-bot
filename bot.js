@@ -16,14 +16,12 @@ function createBotInstance() {
     host: process.env.MC_HOST || 'mc.mineberry.org',
     port: parseInt(process.env.MC_PORT) || 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
-    version: '1.18.2', // Native protocol for Mineberry's Bungee proxy
+    version: '1.18.2',
     skipValidation: true,
-    viewDistance: 'tiny' // Minimizes chunk packets sent by server
-  });
-
-  // Ignore chunk loading errors from ViaVersion packet corruption
-  bot._client.on('packet', (data, metadata) => {
-    if (metadata.name === 'map_chunk') return;
+    viewDistance: 'tiny',
+    plugins: {
+      blocks: false // Disables chunk/world parsing to fix packet corruption crashes
+    }
   });
 
   bot.on('spawn', () => {
@@ -36,7 +34,7 @@ function createBotInstance() {
     }, 2000);
   });
 
-  // PvP Combat Loop
+  // Combat Loop
   bot.on('physicsTick', () => {
     if (!bot || !bot.entity) return;
     const target = bot.nearestEntity(e => e.type === 'player' && e.username !== bot.username);
@@ -69,8 +67,6 @@ function createBotInstance() {
   });
 
   bot.on('error', (err) => {
-    // Filter out non-fatal chunk errors
-    if (err.message && err.message.includes('managed data')) return;
     console.error('❌ Connection error:', err.message);
   });
 }
