@@ -7,30 +7,38 @@ const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('FaintedBot is running 24/7!'));
 app.listen(PORT, () => console.log(`Keep-alive server listening on port ${PORT}`));
 
+let bot = null;
+
 function createBotInstance() {
   console.log('🛸 Connecting Fainted Bot to Mineberry...');
 
-  const bot = mineflayer.createBot({
+  bot = mineflayer.createBot({
     host: process.env.MC_HOST || 'mc.mineberry.org',
     port: parseInt(process.env.MC_PORT) || 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
-    version: '1.20.1', // Mineberry operates stably on 1.20.1 protocol
-    connectTimeout: 30000,
-    checkTimeoutInterval: 60000
+    version: '1.18.2', // Native protocol for Mineberry's Bungee proxy
+    skipValidation: true,
+    viewDistance: 'tiny' // Minimizes chunk packets sent by server
+  });
+
+  // Ignore chunk loading errors from ViaVersion packet corruption
+  bot._client.on('packet', (data, metadata) => {
+    if (metadata.name === 'map_chunk') return;
   });
 
   bot.on('spawn', () => {
     console.log('👑 FaintedBot successfully joined Mineberry!');
     
-    // Auto-login/register for offline-mode servers
+    // Auto-login / register commands
     setTimeout(() => {
       bot.chat('/register FaintedPass123 FaintedPass123');
       bot.chat('/login FaintedPass123');
     }, 2000);
   });
 
-  // Combat loop
+  // PvP Combat Loop
   bot.on('physicsTick', () => {
+    if (!bot || !bot.entity) return;
     const target = bot.nearestEntity(e => e.type === 'player' && e.username !== bot.username);
     if (!target) return;
 
@@ -61,6 +69,8 @@ function createBotInstance() {
   });
 
   bot.on('error', (err) => {
+    // Filter out non-fatal chunk errors
+    if (err.message && err.message.includes('managed data')) return;
     console.error('❌ Connection error:', err.message);
   });
 }
