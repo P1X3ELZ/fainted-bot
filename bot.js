@@ -18,7 +18,7 @@ function createBotInstance() {
     username: process.env.MC_USERNAME || 'FaintedBot',
     version: '1.18.2',
     physicsEnabled: false,
-    connectTimeout: 30000
+    connectTimeout: 60000 // Extended to handle proxy queue delays
   });
 
   bot.on('login', () => {
@@ -32,7 +32,7 @@ function createBotInstance() {
   bot.on('spawn', () => {
     console.log('👑 FaintedBot has spawned! Transferring to hub...');
     
-    // Send bot to main hub / lobby
+    // Transfer bot to hub
     setTimeout(() => {
       bot.chat('/hub');
       bot.chat('/server hub');
