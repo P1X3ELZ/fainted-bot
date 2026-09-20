@@ -1,10 +1,10 @@
 const mineflayer = require('mineflayer');
 const express = require('express');
 
-// Start Express web server for Render keep-alive
+// Express keep-alive server
 const app = express();
 const PORT = process.env.PORT || 10000;
-app.get('/', (req, res) => res.send('FaintedBot is running 24/7!'));
+app.get('/', (req, res) => res.send('FaintedBot is active!'));
 app.listen(PORT, () => console.log(`Keep-alive server listening on port ${PORT}`));
 
 let bot = null;
@@ -17,25 +17,31 @@ function createBotInstance() {
     port: parseInt(process.env.MC_PORT) || 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
     version: '1.18.2',
-    skipValidation: true,
-    viewDistance: 'tiny',
-    plugins: {
-      blocks: false // Disables chunk/world parsing to fix packet corruption crashes
+    checkTimeoutInterval: 60000
+  });
+
+  // Intercept and swallow corrupt chunk/map packets from Mineberry Bungee proxy
+  bot._client.on('packet', (data, metadata, buffer, fullBuffer) => {
+    if (metadata.name === 'map_chunk' || metadata.name === 'unload_chunk') {
+      metadata.name = 'keep_alive'; // Remap chunk packets so parser skips them
     }
   });
+
+  // Stop physics engine from trying to check blocks below bot
+  bot.physics.enabled = false;
 
   bot.on('spawn', () => {
     console.log('👑 FaintedBot successfully joined Mineberry!');
     
-    // Auto-login / register commands
+    // Auto-login / register
     setTimeout(() => {
       bot.chat('/register FaintedPass123 FaintedPass123');
       bot.chat('/login FaintedPass123');
     }, 2000);
   });
 
-  // Combat Loop
-  bot.on('physicsTick', () => {
+  // Custom combat target tracking (without physics engine)
+  setInterval(() => {
     if (!bot || !bot.entity) return;
     const target = bot.nearestEntity(e => e.type === 'player' && e.username !== bot.username);
     if (!target) return;
@@ -48,14 +54,12 @@ function createBotInstance() {
       bot.setControlState('forward', true);
 
       if (bot.attackCooldown === 0 && distance <= 2.99) {
-        bot.setControlState('sprint', false);
         bot.attack(target);
-        bot.setControlState('sprint', true);
       }
     } else {
       bot.setControlState('forward', false);
     }
-  });
+  }, 50);
 
   bot.on('kicked', (reason) => {
     console.log('⚠️ Bot was kicked:', reason);
@@ -67,6 +71,7 @@ function createBotInstance() {
   });
 
   bot.on('error', (err) => {
+    if (err.message && err.message.includes('managed data')) return;
     console.error('❌ Connection error:', err.message);
   });
 }
