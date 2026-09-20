@@ -17,12 +17,12 @@ function createBotInstance() {
     port: 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
     version: '1.18.2',
-    physicsEnabled: false, // Prevents engine movement packets from triggering ECONNRESET
+    physicsEnabled: false,
     checkTimeoutInterval: 120000
   });
 
   bot.on('login', () => {
-    console.log('🔑 Logged into proxy! Registering / Logging in...');
+    console.log('🔑 Logged into proxy! Authenticating...');
     setTimeout(() => {
       bot.chat('/register FaintedPass123 FaintedPass123');
       bot.chat('/login FaintedPass123');
@@ -38,6 +38,12 @@ function createBotInstance() {
     console.log('👑 FaintedBot successfully joined sub-server!');
   });
 
+  // Keep-alive packet loop to stop proxy kicks
+  setInterval(() => {
+    if (!bot || !bot.entity) return;
+    bot.look(bot.entity.yaw + 0.1, bot.entity.pitch, true);
+  }, 1000);
+
   // Combat loop
   setInterval(() => {
     if (!bot || !bot.entity) return;
@@ -47,15 +53,8 @@ function createBotInstance() {
     const distance = bot.entity.position.distanceTo(target.position);
     bot.lookAt(target.position.offset(0, 1.6, 0), true);
 
-    if (distance <= 3.5) {
-      bot.setControlState('sprint', true);
-      bot.setControlState('forward', true);
-
-      if (bot.attackCooldown === 0 && distance <= 2.99) {
-        bot.attack(target);
-      }
-    } else {
-      bot.setControlState('forward', false);
+    if (distance <= 3.5 && bot.attackCooldown === 0) {
+      bot.attack(target);
     }
   }, 50);
 
@@ -69,10 +68,7 @@ function createBotInstance() {
   });
 
   bot.on('error', (err) => {
-    // Suppress datacenter socket resets to prevent rapid reconnect spam
-    if (err.code === 'ECONNRESET' || err.message.includes('ECONNRESET')) {
-      return;
-    }
+    if (err.code === 'ECONNRESET' || err.message.includes('ECONNRESET')) return;
     console.error('❌ Connection error:', err.message);
   });
 }
