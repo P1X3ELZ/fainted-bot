@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const express = require('express');
 
-// Express keep-alive web server
+// Start Express web server for Render keep-alive
 const app = express();
 const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('FaintedBot is running 24/7!'));
@@ -16,15 +16,9 @@ function createBotInstance() {
     host: process.env.MC_HOST || 'mc.mineberry.org',
     port: parseInt(process.env.MC_PORT) || 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
-    version: '1.18.2',
-    checkTimeoutInterval: 60000
-  });
-
-  // Safely disable physics calculations as soon as physics plugin attaches
-  bot.once('inject_allowed', () => {
-    if (bot.physics) {
-      bot.physics.enabled = false;
-    }
+    version: '1.8.9', // Native protocol bypasses connection timeouts & chunk bugs
+    checkTimeoutInterval: 60000,
+    physicsEnabled: false // Safely disables physics without crashing startup
   });
 
   bot.on('spawn', () => {
@@ -37,7 +31,7 @@ function createBotInstance() {
     }, 2000);
   });
 
-  // PvP loop
+  // Combat loop running on a fixed interval
   setInterval(() => {
     if (!bot || !bot.entity) return;
     const target = bot.nearestEntity(e => e.type === 'player' && e.username !== bot.username);
@@ -68,10 +62,6 @@ function createBotInstance() {
   });
 
   bot.on('error', (err) => {
-    // Suppress BungeeCord/ViaVersion chunk parsing errors
-    if (err.message && (err.message.includes('managed data') || err.message.includes('bounds'))) {
-      return;
-    }
     console.error('❌ Connection error:', err.message);
   });
 }
