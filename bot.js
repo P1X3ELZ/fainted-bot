@@ -14,12 +14,19 @@ function createBotInstance() {
     host: process.env.MC_HOST || 'mc.mineberry.org',
     port: parseInt(process.env.MC_PORT) || 25565,
     username: process.env.MC_USERNAME || 'FaintedBot',
-    version: false, // Auto-negotiate Minecraft protocol version
-    hideErrors: false
+    version: '1.20.1', // Mineberry operates stably on 1.20.1 protocol
+    connectTimeout: 30000,
+    checkTimeoutInterval: 60000
   });
 
   bot.on('spawn', () => {
     console.log('👑 FaintedBot successfully joined Mineberry!');
+    
+    // Auto-login/register for offline-mode servers
+    setTimeout(() => {
+      bot.chat('/register FaintedPass123 FaintedPass123');
+      bot.chat('/login FaintedPass123');
+    }, 2000);
   });
 
   // Combat loop
@@ -49,8 +56,8 @@ function createBotInstance() {
   });
 
   bot.on('end', () => {
-    console.log('🔄 Bot disconnected. Reconnecting in 10 seconds...');
-    setTimeout(createBotInstance, 10000);
+    console.log('🔄 Bot disconnected. Reconnecting in 15 seconds...');
+    setTimeout(createBotInstance, 15000);
   });
 
   bot.on('error', (err) => {
