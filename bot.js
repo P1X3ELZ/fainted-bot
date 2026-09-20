@@ -18,25 +18,28 @@ function createBotInstance() {
     username: process.env.MC_USERNAME || 'FaintedBot',
     version: '1.18.2',
     physicsEnabled: false,
-    connectTimeout: 60000 // Extended to handle proxy queue delays
+    checkTimeoutInterval: 90000
   });
 
   bot.on('login', () => {
-    console.log('🔑 Logged into proxy! Sending auth commands...');
+    console.log('🔑 Authenticating on Bungee proxy...');
+    
+    // Rapid auth attempt
     setTimeout(() => {
       bot.chat('/register FaintedPass123 FaintedPass123');
       bot.chat('/login FaintedPass123');
     }, 1000);
+
+    // Force route into KitPvP / Lobby to exit limbo
+    setTimeout(() => {
+      console.log('🌐 Requesting sub-server routing...');
+      bot.chat('/server pvp');
+      bot.chat('/hub');
+    }, 3000);
   });
 
   bot.on('spawn', () => {
-    console.log('👑 FaintedBot has spawned! Transferring to hub...');
-    
-    // Transfer bot to hub
-    setTimeout(() => {
-      bot.chat('/hub');
-      bot.chat('/server hub');
-    }, 2000);
+    console.log('👑 FaintedBot successfully spawned in-game!');
   });
 
   // Combat loop
@@ -65,8 +68,8 @@ function createBotInstance() {
   });
 
   bot.on('end', () => {
-    console.log('🔄 Bot disconnected. Reconnecting in 20 seconds...');
-    setTimeout(createBotInstance, 20000);
+    console.log('🔄 Disconnected. Reconnecting in 15 seconds...');
+    setTimeout(createBotInstance, 15000);
   });
 
   bot.on('error', (err) => {
